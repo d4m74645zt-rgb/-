@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1018"><title>GYM DASHBOARD PRO</title>
+<style>
+:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:#0d1018;color:#f3f5fb;padding:env(safe-area-inset-top) 15px 60px}
+main{max-width:800px;margin:auto}header{padding:26px 3px 16px}.eyebrow{color:#8cafff;font-size:11px;letter-spacing:2px;font-weight:800}
+h1{font-size:28px;margin:7px 0}h2{font-size:16px;margin:0 0 14px}small,.muted{color:#9ba5b8}
+.card{background:#1a202c;border:1px solid #303a4a;border-radius:18px;padding:17px;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.grid .card{margin:0}
+.value{font-size:25px;font-weight:800;margin-top:8px;overflow-wrap:anywhere}.accent{color:#9ab8ff}
+.row{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap}
+button,.pick{background:#91b2ff;color:#111b31;border:0;border-radius:11px;padding:11px 14px;font-weight:750;font-size:13px;cursor:pointer}
+button.secondary,.pick.secondary{background:#303b50;color:#e2eaff}
+button.danger{background:#493039;color:#ffd3db}button:disabled{opacity:.45}
+input,select{background:#252e3e;color:white;border:1px solid #4a566b;border-radius:10px;padding:11px;font-size:15px;min-width:0}
+input[type=file]{display:none}input[type=number]{width:100%}input[type=datetime-local]{width:100%}
+.field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:125px}.field label{font-size:12px;color:#b7c3d5}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.formgrid .full{grid-column:1/-1}
+.hint{font-size:12px;line-height:1.7;color:#aab5c8}#status{font-size:12px;color:#bad0ff;margin:10px 0}
+canvas{display:block;width:100%;height:215px}.pill{background:#293852;border-radius:99px;color:#c4d6ff;padding:6px 10px;font-size:11px}
+table{width:100%;border-collapse:collapse;font-size:12px}td,th{padding:11px 5px;border-bottom:1px solid #313c4c;text-align:left;white-space:nowrap}th{color:#aab7ca;font-weight:500}
+.tabs{display:flex;gap:7px;margin:15px 0}.tabs button{flex:1;background:#232b3a;color:#b9c6db}.tabs button.active{background:#91b2ff;color:#0d172b}
+[hidden]{display:none!important}.good{color:#91e6bb}.warn{color:#ffcc83}
+#empty{padding:22px 0;text-align:center;color:#a9b8cb}
+</style></head><body><main>
+<header><div class="eyebrow">TRAIN SMART · TRACK PROGRESS</div><h1>GYM DASHBOARD <span class="accent">PRO</span></h1><div class="muted">1セットずつ、成長を記録。</div></header>
+<div class="tabs"><button class="active" data-tab="dashboard">分析</button><button data-tab="record">記録する</button><button data-tab="data">データ管理</button></div>
+<section id="dashboard">
+<div class="card"><div class="row"><div><strong>種目別パフォーマンス</strong><div class="hint">記録を選ぶと自動でグラフが切り替わる</div></div><select id="exercise"></select></div><div id="status">記録を準備中…</div></div>
+<div class="grid">
+<div class="card"><small>最高重量</small><div class="value" id="max">—</div></div>
+<div class="card"><small>推定 1RM</small><div class="value" id="orm">—</div></div>
+<div class="card"><small>前回セット</small><div class="value" id="last">—</div></div>
+<div class="card"><small>記録セット数</small><div class="value" id="count">—</div></div>
+</div>
+<div class="card"><div class="row"><h2>前回との比較</h2><span class="pill">同じ種目</span></div><div id="comparison" class="muted">記録がありません</div></div>
+<div class="card"><div class="row"><h2>重量の推移</h2><span class="pill">kg / セット</span></div><canvas id="weight"></canvas></div>
+<div class="card"><div class="row"><h2>総負荷量の推移</h2><span class="pill">kg × 回数</span></div><canvas id="volume"></canvas></div>
+<div class="card"><h2>週間トレーニング量（全種目）</h2><canvas id="weekly"></canvas></div>
+<div class="card"><div class="row"><h2>セット履歴</h2><span id="historycount" class="pill"></span></div><div style="overflow:auto"><table><thead><tr><th>日時</th><th>種目</th><th>重量</th><th>回数</th><th></th></tr></thead><tbody id="history"></tbody></table></div><div id="empty" hidden>まだ記録がありません。「記録する」から追加してね。</div></div>
+</section>
+<section id="record" hidden>
+<div class="card"><h2>新しいセットを追加</h2><div class="formgrid">
+<div class="field full"><label for="name">種目</label><input id="name" list="names" placeholder="例：ベンチプレス"><datalist id="names"></datalist></div>
+<div class="field"><label for="kg">重量（kg）</label><input id="kg" type="number" inputmode="decimal" min="0" step="0.5" placeholder="60"></div>
+<div class="field"><label for="reps">回数</label><input id="reps" type="number" inputmode="numeric" min="1" step="1" placeholder="10"></div>
+<div class="field full"><label for="when">日時</label><input id="when" type="datetime-local"></div>
+<div class="full row"><button id="add">セットを保存</button><span id="saved" class="hint"></span></div></div>
+<p class="hint">保存するとこの端末のブラウザに記録が残ります。iPhoneショートカットの gym_log.csv と自動同期はしないため、両方の記録をまとめたいときは「データ管理」でCSVを読み込んでください。</p></div>
+</section>
+<section id="data" hidden>
+<div class="card"><h2>iCloud Drive のCSVを取り込む</h2><p class="hint">ショートカットで作った gym_log.csv を選択。既存の記録と重複しないように統合します。</p><label class="pick">CSVを選択<input id="file" type="file" accept=".csv,text/csv,text/plain"></label><p id="importstatus" class="hint"></p></div>
+<div class="card"><h2>バックアップ・管理</h2><div class="row"><button id="export">CSVを書き出す</button><button id="sample" class="secondary">サンプルを表示</button><button id="clear" class="danger">記録を全削除</button></div><p class="hint">CSVの列は「日時,種目,重量,回数」。書き出したCSVをiCloud Driveに保存すればバックアップできます。サンプルは実記録と区別して表示します。</p></div>
+</section>
+<div class="hint">推定1RM＝重量 × (1＋回数÷30)（Epley式）。このページのCSV処理と記録保存は端末内で行われ、外部サーバーには送信しません。Safariのサイトデータを削除するとブラウザ内の保存記録が消える場合があります。</div>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id),KEY="gym_dashboard_pro_v1";
+let rows=[],sampleMode=false;
+const demo=[["2026-10-01T18:00","ベンチプレス",50,10],["2026-10-01T18:04","ベンチプレス",55,8],["2026-10-05T18:00","ベンチプレス",57.5,8],["2026-10-09T18:00","ベンチプレス",60,7],["2026-10-09T18:05","ラットプルダウン",45,12],["2026-10-12T18:00","ラットプルダウン",50,10]].map((r,i)=>({date:r[0],name:r[1],kg:r[2],reps:r[3],id:"sample"+i}));
+function normalizedDate(s){let t=String(s||"").trim().replace(/\//g,"-").replace(" ","T");let d=new Date(t);return Number.isNaN(d.getTime())?null:t.slice(0,16)}
+function parseCSV(text){let records=[],line=[],cell="",quoted=false;for(let i=0;i<text.length;i++){let c=text[i];if(c==='"'){if(quoted&&text[i+1]==='"'){cell+='"';i++}else quoted=!quoted}else if(c===','&&!quoted){line.push(cell);cell=""}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&text[i+1]==='\n')i++;line.push(cell);records.push(line);line=[];cell=""}else cell+=c}if(cell||line.length){line.push(cell);records.push(line)}return records.map(p=>{let date=normalizedDate((p[0]||"").replace(/^\uFEFF/,"")),name=(p[1]||"").trim(),kg=Number(p[2]),reps=Number(p[3]);return {date,name,kg,reps}}).filter(r=>r.date&&r.name&&pNum(r.kg)&&Number.isInteger(r.reps)&&r.reps>0)}
+function pNum(n){return Number.isFinite(n)&&n>=0}
+function signature(r){return [r.date,r.name,r.kg,r.reps].join("|")}
+function merge(incoming){let seen=new Set(rows.map(signature)),added=0;for(const r of incoming){if(!seen.has(signature(r))){rows.push({...r,id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())});seen.add(signature(r));added++}}rows.sort((a,b)=>a.date.localeCompare(b.date));save();refresh();return added}
+function save(){if(!sampleMode)try{localStorage.setItem(KEY,JSON.stringify(rows))}catch(e){$("status").textContent="保存容量を確認してください"}}
+function resetSample(){sampleMode=false;try{rows=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){rows=[]}rows=rows.filter(r=>r.date&&r.name&&pNum(Number(r.kg))&&Number.isInteger(Number(r.reps)));rows.sort((a,b)=>a.date.localeCompare(b.date));refresh()}
+function graph(id,values,labels,bar=false){let c=$(id),w=Math.max(c.getBoundingClientRect().width,240),h=215,d=devicePixelRatio||1;c.width=w*d;c.height=h*d;let g=c.getContext("2d");g.scale(d,d);g.clearRect(0,0,w,h);let left=47,right=14,top=16,bottom=32,cw=w-left-right,ch=h-top-bottom,max=Math.max(1,...values)*1.15;g.font="11px -apple-system,sans-serif";g.textBaseline="middle";for(let k=0;k<=4;k++){let y=top+ch*k/4;g.strokeStyle="#344155";g.beginPath();g.moveTo(left,y);g.lineTo(w-right,y);g.stroke();g.fillStyle="#9eacc1";g.textAlign="right";g.fillText(Math.round(max*(4-k)/4).toLocaleString(),left-7,y)}if(!values.length)return;let X=i=>left+(values.length===1?cw/2:i*cw/(values.length-1)),Y=v=>top+ch*(1-v/max);if(bar){let bw=Math.min(46,cw/values.length*.65);values.forEach((v,i)=>{g.fillStyle="#91b2ff";g.fillRect(X(i)-bw/2,Y(v),bw,top+ch-Y(v))})}else{g.strokeStyle="#91b2ff";g.lineWidth=2.5;g.beginPath();values.forEach((v,i)=>i?g.lineTo(X(i),Y(v)):g.moveTo(X(i),Y(v)));g.stroke();values.forEach((v,i)=>{g.fillStyle="#c2d3ff";g.beginPath();g.arc(X(i),Y(v),3.5,0,Math.PI*2);g.fill()})}g.textAlign="center";g.textBaseline="top";g.fillStyle="#a9b8cd";let step=Math.max(1,Math.ceil(labels.length/5));labels.forEach((s,i)=>{if(i%step===0||i===labels.length-1)g.fillText(s,X(i),h-bottom+9)})}
+function refresh(){let names=[...new Set(rows.map(r=>r.name))],old=$("exercise").value;$("exercise").replaceChildren();for(const n of names){let o=document.createElement("option");o.value=n;o.textContent=n;$("exercise").append(o)}$("exercise").value=names.includes(old)?old:(names[0]||"");$("names").replaceChildren(...names.map(n=>{let o=document.createElement("option");o.value=n;return o}));$("status").textContent=(sampleMode?"サンプルデータ：":"保存済み：")+rows.length+"セット / "+names.length+"種目";render()}
+function render(){let rs=rows.filter(r=>r.name===$("exercise").value),last=rs.at(-1);$("max").textContent=rs.length?Math.max(...rs.map(r=>r.kg))+" kg":"—";$("orm").textContent=rs.length?Math.max(...rs.map(r=>r.kg*(1+r.reps/30))).toFixed(1)+" kg":"—";$("last").textContent=last?last.kg+"kg × "+last.reps:"—";$("count").textContent=rs.length||"—";let prev=rs.at(-2),cmp=$("comparison");cmp.replaceChildren();if(prev&&last){let delta=last.kg-prev.kg;cmp.textContent=`前セット ${prev.kg}kg × ${prev.reps}回 → 最新 ${last.kg}kg × ${last.reps}回（重量 ${delta>0?"+":""}${delta}kg）`;cmp.className=delta>0?"good":delta<0?"warn":"muted"}else{cmp.textContent="比較には同じ種目の記録が2セット以上必要です";cmp.className="muted"}
+let label=r=>{let d=new Date(r.date);return (d.getMonth()+1)+"/"+d.getDate()};graph("weight",rs.map(r=>r.kg),rs.map(label));graph("volume",rs.map(r=>r.kg*r.reps),rs.map(label));
+let wk={};rows.forEach(r=>{let d=new Date(r.date),day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);let key=[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");wk[key]=(wk[key]||0)+r.kg*r.reps});let keys=Object.keys(wk).sort();graph("weekly",keys.map(k=>wk[k]),keys.map(k=>{let a=k.split("-");return +a[1]+"/"+ +a[2]}),true);
+let body=$("history");body.replaceChildren();$("historycount").textContent=rs.length+"件";$("empty").hidden=!!rs.length;rs.slice().reverse().forEach(r=>{let tr=document.createElement("tr");[r.date.replace("T"," "),r.name,r.kg+"kg",r.reps+"回"].forEach(v=>{let td=document.createElement("td");td.textContent=v;tr.append(td)});let td=document.createElement("td"),b=document.createElement("button");b.textContent="削除";b.className="danger";b.style.padding="6px 8px";b.onclick=()=>{if(confirm("この1セットを削除する？")){rows=rows.filter(x=>x.id!==r.id);if(!sampleMode)save();refresh()}};td.append(b);tr.append(td);body.append(tr)})}
+function tab(id){document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));["dashboard","record","data"].forEach(s=>$(s).hidden=s!==id);if(id==="dashboard")requestAnimationFrame(render)}
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>tab(b.dataset.tab));
+$("exercise").onchange=render;window.onresize=()=>{if(!$("dashboard").hidden)render()};
+function localNow(){let d=new Date(),offset=d.getTimezoneOffset()*60000;return new Date(d-offset).toISOString().slice(0,16)}$("when").value=localNow();
+$("add").onclick=()=>{let name=$("name").value.trim(),kg=Number($("kg").value),reps=Number($("reps").value),date=normalizedDate($("when").value);if(!name||$("kg").value===""||!pNum(kg)||!Number.isInteger(reps)||reps<=0||!date){$("saved").textContent="種目・重量・回数・日時を確認してね";return}if(sampleMode)resetSample();let n=merge([{name,kg,reps,date}]);$("saved").textContent=n?"保存できた！":"同じセットは登録済み";$("kg").value="";$("reps").value="";$("when").value=localNow();$("exercise").value=name;render()};
+$("file").onchange=async e=>{let f=e.target.files[0];if(!f)return;let parsed=parseCSV(await f.text());if(!parsed.length){$("importstatus").textContent="読み込めるデータがありません。CSVの列順を確認してね";return}if(sampleMode)resetSample();let added=merge(parsed);$("importstatus").textContent=f.name+"："+parsed.length+"件を確認、"+added+"件を追加（重複除外）";e.target.value=""};
+$("export").onclick=()=>{let csv="\uFEFF日時,種目,重量,回数\r\n"+rows.map(r=>[r.date.replace("T"," "),'"'+r.name.replace(/"/g,'""')+'"',r.kg,r.reps].join(",")).join("\r\n");let url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));let a=document.createElement("a");a.href=url;a.download="gym_dashboard_backup.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+$("sample").onclick=()=>{sampleMode=true;rows=demo.map(r=>({...r}));refresh();tab("dashboard")};
+$("clear").onclick=()=>{if(!confirm("この端末に保存した全記録を削除する？ 元に戻せません。"))return;sampleMode=false;rows=[];localStorage.removeItem(KEY);refresh()};
+resetSample();
+</script></body></html>
